@@ -8,6 +8,7 @@ import (
 	"net/http"
 	"os"
 	"os/signal"
+	"path/filepath"
 	"strings"
 	"syscall"
 	"time"
@@ -17,6 +18,8 @@ import (
 
 	docketv1 "github.com/schultzh06/docket/server/gen/docket/v1"
 	"github.com/schultzh06/docket/server/gen/docket/v1/docketv1connect"
+	"github.com/schultzh06/docket/server/internal/store"
+	"github.com/schultzh06/docket/server/internal/store/db"
 )
 
 // Overridden at build time: go build -ldflags "-X main.version=$(git describe --always --dirty)"
@@ -48,6 +51,7 @@ func requireBearer(token []byte, next http.Handler) http.Handler {
 
 func main() {
 	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
+	slog.SetDefault(log)
 
 	token := os.Getenv("DOCKET_TOKEN")
 	if len(token) < 32 {
@@ -72,11 +76,36 @@ func main() {
 		Handler:           requireBearer([]byte(token), mux),
 		Protocols:         protocols,
 		ReadHeaderTimeout: 5 * time.Second,
-		// No WriteTimeout: it would kill WatchUpdates streams later.
+		// No WriteTimeout: it would kill WatchUpdates streams
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
+
+	// OPEN DB
+	dataDir := os.Getenv("STATE_DIRECTORY") // set by systemd
+	if dataDir == "" {
+		dataDir = "./data" // dev fallback
+	}
+	if err := os.MkdirAll(dataDir, 0o700); err != nil {
+		log.Error("create data dir", "err", err)
+		os.Exit(1)
+	}
+
+	conn, err := store.Open(ctx, filepath.Join(dataDir, "docket.db"))
+	if err != nil {
+		log.Error("open store", "err", err)
+		os.Exit(1)
+	}
+	defer conn.Close()
+
+	// temporary debug check
+	n, err := db.New(conn).CountAgendaItems(ctx)
+	if err != nil {
+		log.Error("count", "err", err)
+		os.Exit(1)
+	}
+	log.Info("store ready", "agenda_items", n)
 
 	go func() {
 		log.Info("listening", "addr", addr, "version", version)
