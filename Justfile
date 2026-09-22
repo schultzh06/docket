@@ -41,3 +41,8 @@ check:
     cd server && go vet ./... && go test ./...
     cd server && golangci-lint run
     cd apps/tui && pnpm typecheck
+
+deploy: build
+    @git diff --quiet HEAD || (echo "uncommitted changes; commit first" && exit 1)
+    rsync bin/docket root@docket:/usr/local/bin/docket.new
+    ssh root@docket 'chmod 755 /usr/local/bin/docket.new && mv /usr/local/bin/docket.new /usr/local/bin/docket && systemctl restart docket'
