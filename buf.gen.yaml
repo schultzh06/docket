@@ -1,0 +1,16 @@
+version: v2
+managed:
+  enabled: true
+  override:
+    - file_option: go_package_prefix
+      value: github.com/schultzh06/docket/server/gen
+plugins:
+  - remote: buf.build/protocolbuffers/go
+    out: server/gen
+    opt: paths=source_relative
+  - remote: buf.build/connectrpc/go
+    out: server/gen
+    opt: paths=source_relative
+  - remote: buf.build/bufbuild/es
+    out: apps/tui/src/gen
+    opt: target=ts

@@ -1,0 +1,28 @@
+# secrets & local config
+.env
+.env.*
+!.env.example
+secrets/
+
+# local data (contains your mail/calendar contents)
+*.db
+*.db-wal
+*.db-shm
+*.sqlite
+*.ics
+
+# build output
+/bin/
+/server/bin/
+*.test
+*.out
+coverage.*
+
+# node
+node_modules/
+dist/
+*.tsbuildinfo
+
+# editor / os
+.idea/
+.DS_Store

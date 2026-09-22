@@ -1,0 +1,16 @@
+syntax = "proto3";
+
+package docket.v1;
+
+import "google/protobuf/timestamp.proto";
+
+service DashService {
+  rpc GetStatus(GetStatusRequest) returns (GetStatusResponse) {}
+}
+
+message GetStatusRequest {}
+
+message GetStatusResponse {
+  string version = 1;
+  google.protobuf.Timestamp server_time = 2;
+}
