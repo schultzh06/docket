@@ -4,7 +4,8 @@
   "description": "",
   "main": "index.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "dev": "tsx --env-file=../../.env src/index.tsx",
+    "typecheck": "tsc --noEmit"
   },
   "keywords": [],
   "author": "",
@@ -21,6 +22,14 @@
   "dependencies": {
     "@bufbuild/protobuf": "^2.15.0",
     "@connectrpc/connect": "^2.2.0",
-    "@connectrpc/connect-node": "^2.2.0"
+    "@connectrpc/connect-node": "^2.2.0",
+    "ink": "^7.1.1",
+    "react": "^19.3.0"
+  },
+  "devDependencies": {
+    "@types/node": "^26.6.2",
+    "@types/react": "^19.3.0",
+    "tsx": "^4.23.15",
+    "typescript": "^7.0.2"
   }
 }

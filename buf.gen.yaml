@@ -1,4 +1,5 @@
 version: v2
+clean: true
 managed:
   enabled: true
   override:
@@ -13,4 +14,7 @@ plugins:
     opt: paths=source_relative
   - remote: buf.build/bufbuild/es
     out: apps/tui/src/gen
-    opt: target=ts
+    opt: 
+      - target=ts
+      - import_extension=js
+

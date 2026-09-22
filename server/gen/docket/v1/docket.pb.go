@@ -2,7 +2,7 @@
 // versions:
 // 	protoc-gen-go v1.36.12
 // 	protoc        (unknown)
-// source: docket/v1/dash.proto
+// source: docket/v1/docket.proto
 
 package docketv1
 
@@ -30,7 +30,7 @@ type GetStatusRequest struct {
 
 func (x *GetStatusRequest) Reset() {
 	*x = GetStatusRequest{}
-	mi := &file_docket_v1_dash_proto_msgTypes[0]
+	mi := &file_docket_v1_docket_proto_msgTypes[0]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -42,7 +42,7 @@ func (x *GetStatusRequest) String() string {
 func (*GetStatusRequest) ProtoMessage() {}
 
 func (x *GetStatusRequest) ProtoReflect() protoreflect.Message {
-	mi := &file_docket_v1_dash_proto_msgTypes[0]
+	mi := &file_docket_v1_docket_proto_msgTypes[0]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -55,7 +55,7 @@ func (x *GetStatusRequest) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStatusRequest.ProtoReflect.Descriptor instead.
 func (*GetStatusRequest) Descriptor() ([]byte, []int) {
-	return file_docket_v1_dash_proto_rawDescGZIP(), []int{0}
+	return file_docket_v1_docket_proto_rawDescGZIP(), []int{0}
 }
 
 type GetStatusResponse struct {
@@ -68,7 +68,7 @@ type GetStatusResponse struct {
 
 func (x *GetStatusResponse) Reset() {
 	*x = GetStatusResponse{}
-	mi := &file_docket_v1_dash_proto_msgTypes[1]
+	mi := &file_docket_v1_docket_proto_msgTypes[1]
 	ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 	ms.StoreMessageInfo(mi)
 }
@@ -80,7 +80,7 @@ func (x *GetStatusResponse) String() string {
 func (*GetStatusResponse) ProtoMessage() {}
 
 func (x *GetStatusResponse) ProtoReflect() protoreflect.Message {
-	mi := &file_docket_v1_dash_proto_msgTypes[1]
+	mi := &file_docket_v1_docket_proto_msgTypes[1]
 	if x != nil {
 		ms := protoimpl.X.MessageStateOf(protoimpl.Pointer(x))
 		if ms.LoadMessageInfo() == nil {
@@ -93,7 +93,7 @@ func (x *GetStatusResponse) ProtoReflect() protoreflect.Message {
 
 // Deprecated: Use GetStatusResponse.ProtoReflect.Descriptor instead.
 func (*GetStatusResponse) Descriptor() ([]byte, []int) {
-	return file_docket_v1_dash_proto_rawDescGZIP(), []int{1}
+	return file_docket_v1_docket_proto_rawDescGZIP(), []int{1}
 }
 
 func (x *GetStatusResponse) GetVersion() string {
@@ -110,43 +110,43 @@ func (x *GetStatusResponse) GetServerTime() *timestamppb.Timestamp {
 	return nil
 }
 
-var File_docket_v1_dash_proto protoreflect.FileDescriptor
+var File_docket_v1_docket_proto protoreflect.FileDescriptor
 
-const file_docket_v1_dash_proto_rawDesc = "" +
+const file_docket_v1_docket_proto_rawDesc = "" +
 	"\n" +
-	"\x14docket/v1/dash.proto\x12\tdocket.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x12\n" +
+	"\x16docket/v1/docket.proto\x12\tdocket.v1\x1a\x1fgoogle/protobuf/timestamp.proto\"\x12\n" +
 	"\x10GetStatusRequest\"j\n" +
 	"\x11GetStatusResponse\x12\x18\n" +
 	"\aversion\x18\x01 \x01(\tR\aversion\x12;\n" +
 	"\vserver_time\x18\x02 \x01(\v2\x1a.google.protobuf.TimestampR\n" +
-	"serverTime2W\n" +
-	"\vDashService\x12H\n" +
-	"\tGetStatus\x12\x1b.docket.v1.GetStatusRequest\x1a\x1c.docket.v1.GetStatusResponse\"\x00B\x9b\x01\n" +
-	"\rcom.docket.v1B\tDashProtoP\x01Z:github.com/schultzh06/docket/server/gen/docket/v1;docketv1\xa2\x02\x03DXX\xaa\x02\tDocket.V1\xca\x02\tDocket\\V1\xe2\x02\x15Docket\\V1\\GPBMetadata\xea\x02\n" +
+	"serverTime2Y\n" +
+	"\rDocketService\x12H\n" +
+	"\tGetStatus\x12\x1b.docket.v1.GetStatusRequest\x1a\x1c.docket.v1.GetStatusResponse\"\x00B\x9d\x01\n" +
+	"\rcom.docket.v1B\vDocketProtoP\x01Z:github.com/schultzh06/docket/server/gen/docket/v1;docketv1\xa2\x02\x03DXX\xaa\x02\tDocket.V1\xca\x02\tDocket\\V1\xe2\x02\x15Docket\\V1\\GPBMetadata\xea\x02\n" +
 	"Docket::V1b\x06proto3"
 
 var (
-	file_docket_v1_dash_proto_rawDescOnce sync.Once
-	file_docket_v1_dash_proto_rawDescData []byte
+	file_docket_v1_docket_proto_rawDescOnce sync.Once
+	file_docket_v1_docket_proto_rawDescData []byte
 )
 
-func file_docket_v1_dash_proto_rawDescGZIP() []byte {
-	file_docket_v1_dash_proto_rawDescOnce.Do(func() {
-		file_docket_v1_dash_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_docket_v1_dash_proto_rawDesc), len(file_docket_v1_dash_proto_rawDesc)))
+func file_docket_v1_docket_proto_rawDescGZIP() []byte {
+	file_docket_v1_docket_proto_rawDescOnce.Do(func() {
+		file_docket_v1_docket_proto_rawDescData = protoimpl.X.CompressGZIP(unsafe.Slice(unsafe.StringData(file_docket_v1_docket_proto_rawDesc), len(file_docket_v1_docket_proto_rawDesc)))
 	})
-	return file_docket_v1_dash_proto_rawDescData
+	return file_docket_v1_docket_proto_rawDescData
 }
 
-var file_docket_v1_dash_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
-var file_docket_v1_dash_proto_goTypes = []any{
+var file_docket_v1_docket_proto_msgTypes = make([]protoimpl.MessageInfo, 2)
+var file_docket_v1_docket_proto_goTypes = []any{
 	(*GetStatusRequest)(nil),      // 0: docket.v1.GetStatusRequest
 	(*GetStatusResponse)(nil),     // 1: docket.v1.GetStatusResponse
 	(*timestamppb.Timestamp)(nil), // 2: google.protobuf.Timestamp
 }
-var file_docket_v1_dash_proto_depIdxs = []int32{
+var file_docket_v1_docket_proto_depIdxs = []int32{
 	2, // 0: docket.v1.GetStatusResponse.server_time:type_name -> google.protobuf.Timestamp
-	0, // 1: docket.v1.DashService.GetStatus:input_type -> docket.v1.GetStatusRequest
-	1, // 2: docket.v1.DashService.GetStatus:output_type -> docket.v1.GetStatusResponse
+	0, // 1: docket.v1.DocketService.GetStatus:input_type -> docket.v1.GetStatusRequest
+	1, // 2: docket.v1.DocketService.GetStatus:output_type -> docket.v1.GetStatusResponse
 	2, // [2:3] is the sub-list for method output_type
 	1, // [1:2] is the sub-list for method input_type
 	1, // [1:1] is the sub-list for extension type_name
@@ -154,26 +154,26 @@ var file_docket_v1_dash_proto_depIdxs = []int32{
 	0, // [0:1] is the sub-list for field type_name
 }
 
-func init() { file_docket_v1_dash_proto_init() }
-func file_docket_v1_dash_proto_init() {
-	if File_docket_v1_dash_proto != nil {
+func init() { file_docket_v1_docket_proto_init() }
+func file_docket_v1_docket_proto_init() {
+	if File_docket_v1_docket_proto != nil {
 		return
 	}
 	type x struct{}
 	out := protoimpl.TypeBuilder{
 		File: protoimpl.DescBuilder{
 			GoPackagePath: reflect.TypeOf(x{}).PkgPath(),
-			RawDescriptor: unsafe.Slice(unsafe.StringData(file_docket_v1_dash_proto_rawDesc), len(file_docket_v1_dash_proto_rawDesc)),
+			RawDescriptor: unsafe.Slice(unsafe.StringData(file_docket_v1_docket_proto_rawDesc), len(file_docket_v1_docket_proto_rawDesc)),
 			NumEnums:      0,
 			NumMessages:   2,
 			NumExtensions: 0,
 			NumServices:   1,
 		},
-		GoTypes:           file_docket_v1_dash_proto_goTypes,
-		DependencyIndexes: file_docket_v1_dash_proto_depIdxs,
-		MessageInfos:      file_docket_v1_dash_proto_msgTypes,
+		GoTypes:           file_docket_v1_docket_proto_goTypes,
+		DependencyIndexes: file_docket_v1_docket_proto_depIdxs,
+		MessageInfos:      file_docket_v1_docket_proto_msgTypes,
 	}.Build()
-	File_docket_v1_dash_proto = out.File
-	file_docket_v1_dash_proto_goTypes = nil
-	file_docket_v1_dash_proto_depIdxs = nil
+	File_docket_v1_docket_proto = out.File
+	file_docket_v1_docket_proto_goTypes = nil
+	file_docket_v1_docket_proto_depIdxs = nil
 }
