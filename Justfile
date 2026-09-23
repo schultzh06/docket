@@ -65,3 +65,6 @@ check: gen-check
     cd server && go vet ./... && go test ./...
     cd server && golangci-lint run
     cd apps/tui && pnpm typecheck
+
+sync:
+    cd server && go run ./cmd/docket sync

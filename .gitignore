@@ -10,6 +10,7 @@ secrets/
 *.db-shm
 *.sqlite
 *.ics
+!*sample.ics
 
 # build output
 /bin/
