@@ -16,6 +16,7 @@ jobs:
         with:
           format: false
           push: false
+          pr_comment: false
       - uses: sqlc-dev/setup-sqlc@v4
         with:
           sqlc-version: "1.31.1"
