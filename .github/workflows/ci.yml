@@ -18,7 +18,7 @@ jobs:
           push: false
       - uses: sqlc-dev/setup-sqlc@v4
         with:
-          sqlc-version: "X.Y.Z"      # match `sqlc version` locally
+          sqlc-version: "1.31.1"
       - uses: extractions/setup-just@v3
       - run: just gen-check
 
