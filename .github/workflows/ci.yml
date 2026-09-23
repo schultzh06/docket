@@ -8,16 +8,19 @@ permissions:
   contents: read
 
 jobs:
-  proto:
+  codegen:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v5
-      - uses: bufbuild/buf-action@v1   # installs buf, runs lint; breaking on PRs vs base
+      - uses: bufbuild/buf-action@v1   # installs buf; lint + breaking-on-PR
         with:
           format: false
           push: false
-      - name: generated code is current
-        run: buf generate && test -z "$(git status --porcelain -- server/gen apps/tui/src/gen)"
+      - uses: sqlc-dev/setup-sqlc@v4
+        with:
+          sqlc-version: "X.Y.Z"      # match `sqlc version` locally
+      - uses: extractions/setup-just@v3
+      - run: just gen-check
 
   go:
     runs-on: ubuntu-latest

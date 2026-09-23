@@ -97,9 +97,14 @@ func main() {
 		log.Error("open store", "err", err)
 		os.Exit(1)
 	}
-	defer conn.Close()
 
-	// temporary debug check
+	defer func() {
+		if err := conn.Close(); err != nil {
+			log.Error("close store", "err", err)
+		}
+	}()
+
+	// TODO: remove temporary debug check
 	n, err := db.New(conn).CountAgendaItems(ctx)
 	if err != nil {
 		log.Error("count", "err", err)

@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"embed"
+	"errors"
 	"fmt"
 	"io/fs"
 	"log/slog"
@@ -34,13 +35,11 @@ func Open(ctx context.Context, path string) (*sql.DB, error) {
 
 	// Ping to force connection on lazy Open
 	if err := db.PingContext(ctx); err != nil {
-		db.Close()
-		return nil, fmt.Errorf("ping sqlite: %w", err)
+		return nil, errors.Join(fmt.Errorf("ping sqlite: %w", err), db.Close())
 	}
 
 	if err := migrate(ctx, db); err != nil {
-		db.Close()
-		return nil, err
+		return nil, errors.Join(err, db.Close())
 	}
 	return db, nil
 }
