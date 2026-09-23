@@ -2,127 +2,109 @@ package main
 
 import (
 	"context"
-	"crypto/subtle"
-	"errors"
+	"database/sql"
+	"fmt"
 	"log/slog"
-	"net/http"
 	"os"
 	"os/signal"
 	"path/filepath"
-	"strings"
 	"syscall"
 	"time"
+	_ "time/tzdata" // embed the timezone database; minimal LXCs may lack /usr/share/zoneinfo
 
-	"connectrpc.com/connect"
-	"google.golang.org/protobuf/types/known/timestamppb"
-
-	docketv1 "github.com/schultzh06/docket/server/gen/docket/v1"
-	"github.com/schultzh06/docket/server/gen/docket/v1/docketv1connect"
+	"github.com/schultzh06/docket/server/internal/canvas"
+	"github.com/schultzh06/docket/server/internal/ics"
 	"github.com/schultzh06/docket/server/internal/store"
-	"github.com/schultzh06/docket/server/internal/store/db"
 )
 
-// Overridden at build time: go build -ldflags "-X main.version=$(git describe --always --dirty)"
+// Overridden at build time via -ldflags "-X main.version=..."
 var version = "dev"
 
-type server struct{}
-
-func (s *server) GetStatus(
-	ctx context.Context,
-	req *connect.Request[docketv1.GetStatusRequest],
-) (*connect.Response[docketv1.GetStatusResponse], error) {
-	return connect.NewResponse(&docketv1.GetStatusResponse{
-		Version:    version,
-		ServerTime: timestamppb.Now(),
-	}), nil
-}
-
-func requireBearer(token []byte, next http.Handler) http.Handler {
-	errw := connect.NewErrorWriter()
-	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		got, ok := strings.CutPrefix(r.Header.Get("Authorization"), "Bearer ")
-		if !ok || subtle.ConstantTimeCompare([]byte(got), token) != 1 {
-			_ = errw.Write(w, r, connect.NewError(connect.CodeUnauthenticated, errors.New("invalid or missing token")))
-			return
-		}
-		next.ServeHTTP(w, r)
-	})
-}
-
 func main() {
-	log := slog.New(slog.NewTextHandler(os.Stderr, nil))
-	slog.SetDefault(log)
-
-	token := os.Getenv("DOCKET_TOKEN")
-	if len(token) < 32 {
-		log.Error("DOCKET_TOKEN missing or too short")
+	slog.SetDefault(slog.New(slog.NewTextHandler(os.Stderr, nil)))
+	if err := run(os.Args[1:]); err != nil {
+		slog.Error("fatal", "err", err)
 		os.Exit(1)
 	}
-	addr := os.Getenv("DOCKET_ADDR")
-	if addr == "" {
-		addr = "127.0.0.1:8080"
-	}
+}
 
-	mux := http.NewServeMux()
-	path, handler := docketv1connect.NewDocketServiceHandler(&server{})
-	mux.Handle(path, handler)
-
-	protocols := new(http.Protocols)
-	protocols.SetHTTP1(true)
-	protocols.SetUnencryptedHTTP2(true) // h2c; Tailscale provides the encryption
-
-	srv := &http.Server{
-		Addr:              addr,
-		Handler:           requireBearer([]byte(token), mux),
-		Protocols:         protocols,
-		ReadHeaderTimeout: 5 * time.Second,
-		// No WriteTimeout: it would kill WatchUpdates streams
+func run(args []string) error {
+	cmd := "serve"
+	if len(args) > 0 {
+		cmd = args[0]
 	}
 
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
-	// OPEN DB
-	dataDir := os.Getenv("STATE_DIRECTORY") // set by systemd
-	if dataDir == "" {
-		dataDir = "./data" // dev fallback
-	}
-	if err := os.MkdirAll(dataDir, 0o700); err != nil {
-		log.Error("create data dir", "err", err)
-		os.Exit(1)
+	cfg, err := loadConfig()
+	if err != nil {
+		return err
 	}
 
+	switch cmd {
+	case "serve":
+		return serve(ctx, cfg)
+	case "sync":
+		return syncOnce(ctx, cfg)
+	default:
+		return fmt.Errorf("unknown command %q (want: serve, sync)", cmd)
+	}
+}
+
+type config struct {
+	DataDir   string
+	CanvasURL string
+	Location  *time.Location
+	Addr      string
+	Token     string
+}
+
+func loadConfig() (config, error) {
+	cfg := config{
+		DataDir:   envOr("STATE_DIRECTORY", "./data"),
+		CanvasURL: os.Getenv("DOCKET_CANVAS_ICS_URL"),
+		Addr:      envOr("DOCKET_ADDR", "127.0.0.1:8080"),
+		Token:     os.Getenv("DOCKET_TOKEN"),
+	}
+	loc, err := time.LoadLocation(envOr("DOCKET_TZ", "America/New_York"))
+	if err != nil {
+		return config{}, fmt.Errorf("DOCKET_TZ: %w", err)
+	}
+	cfg.Location = loc
+	return cfg, nil
+}
+
+func envOr(key, fallback string) string {
+	if v := os.Getenv(key); v != "" {
+		return v
+	}
+	return fallback
+}
+
+// openStore: returns the pool plus a cleanup func for the caller to defer.
+func openStore(ctx context.Context, dataDir string) (*sql.DB, func(), error) {
+	if err := os.MkdirAll(dataDir, 0o700); err != nil {
+		return nil, nil, fmt.Errorf("create data dir: %w", err)
+	}
 	conn, err := store.Open(ctx, filepath.Join(dataDir, "docket.db"))
 	if err != nil {
-		log.Error("open store", "err", err)
-		os.Exit(1)
+		return nil, nil, fmt.Errorf("open store: %w", err)
 	}
-
-	defer func() {
+	closeFn := func() {
 		if err := conn.Close(); err != nil {
-			log.Error("close store", "err", err)
+			slog.Error("close store", "err", err)
 		}
-	}()
-
-	// TODO: remove temporary debug check
-	n, err := db.New(conn).CountAgendaItems(ctx)
-	if err != nil {
-		log.Error("count", "err", err)
-		os.Exit(1)
 	}
-	log.Info("store ready", "agenda_items", n)
+	return conn, closeFn, nil
+}
 
-	go func() {
-		log.Info("listening", "addr", addr, "version", version)
-		if err := srv.ListenAndServe(); err != nil && !errors.Is(err, http.ErrServerClosed) {
-			log.Error("server failed", "err", err)
-			os.Exit(1)
-		}
-	}()
-
-	<-ctx.Done()
-	shutdownCtx, cancel := context.WithTimeout(context.Background(), 5*time.Second)
-	defer cancel()
-	_ = srv.Shutdown(shutdownCtx)
-	log.Info("stopped")
+func newCanvasSyncer(cfg config, conn *sql.DB) *canvas.Syncer {
+	return &canvas.Syncer{
+		DB:      conn,
+		Fetcher: ics.NewFetcher(),
+		FeedURL: cfg.CanvasURL,
+		Loc:     cfg.Location,
+		Now:     time.Now,
+	}
 }

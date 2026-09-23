@@ -7,15 +7,171 @@ package db
 
 import (
 	"context"
+	"database/sql"
 )
 
-const countAgendaItems = `-- name: CountAgendaItems :one
-SELECT count(*) FROM agenda_items
+const getAgendaItemByKey = `-- name: GetAgendaItemByKey :one
+SELECT id, content_hash, status 
+FROM agenda_items
+WHERE source = ? AND source_id = ?
 `
 
-func (q *Queries) CountAgendaItems(ctx context.Context) (int64, error) {
-	row := q.db.QueryRowContext(ctx, countAgendaItems)
-	var count int64
-	err := row.Scan(&count)
-	return count, err
+type GetAgendaItemByKeyParams struct {
+	Source   string
+	SourceID string
+}
+
+type GetAgendaItemByKeyRow struct {
+	ID          int64
+	ContentHash string
+	Status      string
+}
+
+func (q *Queries) GetAgendaItemByKey(ctx context.Context, arg GetAgendaItemByKeyParams) (GetAgendaItemByKeyRow, error) {
+	row := q.db.QueryRowContext(ctx, getAgendaItemByKey, arg.Source, arg.SourceID)
+	var i GetAgendaItemByKeyRow
+	err := row.Scan(&i.ID, &i.ContentHash, &i.Status)
+	return i, err
+}
+
+const insertAgendaItem = `-- name: InsertAgendaItem :exec
+INSERT INTO agenda_items (
+    source, source_id, kind, course_id, title,
+    starts_at, ends_at, all_day, source_url,
+    content_hash, first_seen_at, updated_at
+) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+`
+
+type InsertAgendaItemParams struct {
+	Source      string
+	SourceID    string
+	Kind        string
+	CourseID    sql.NullInt64
+	Title       string
+	StartsAt    int64
+	EndsAt      sql.NullInt64
+	AllDay      int64
+	SourceUrl   sql.NullString
+	ContentHash string
+	FirstSeenAt int64
+	UpdatedAt   int64
+}
+
+func (q *Queries) InsertAgendaItem(ctx context.Context, arg InsertAgendaItemParams) error {
+	_, err := q.db.ExecContext(ctx, insertAgendaItem,
+		arg.Source,
+		arg.SourceID,
+		arg.Kind,
+		arg.CourseID,
+		arg.Title,
+		arg.StartsAt,
+		arg.EndsAt,
+		arg.AllDay,
+		arg.SourceUrl,
+		arg.ContentHash,
+		arg.FirstSeenAt,
+		arg.UpdatedAt,
+	)
+	return err
+}
+
+const listActiveSince = `-- name: ListActiveSince :many
+SELECT id, source_id
+FROM agenda_items
+WHERE source = ?1
+  AND status = 'active'
+  AND starts_at >= ?2
+`
+
+type ListActiveSinceParams struct {
+	Source      string
+	WindowStart int64
+}
+
+type ListActiveSinceRow struct {
+	ID       int64
+	SourceID string
+}
+
+func (q *Queries) ListActiveSince(ctx context.Context, arg ListActiveSinceParams) ([]ListActiveSinceRow, error) {
+	rows, err := q.db.QueryContext(ctx, listActiveSince, arg.Source, arg.WindowStart)
+	if err != nil {
+		return nil, err
+	}
+	defer rows.Close()
+	var items []ListActiveSinceRow
+	for rows.Next() {
+		var i ListActiveSinceRow
+		if err := rows.Scan(&i.ID, &i.SourceID); err != nil {
+			return nil, err
+		}
+		items = append(items, i)
+	}
+	if err := rows.Close(); err != nil {
+		return nil, err
+	}
+	if err := rows.Err(); err != nil {
+		return nil, err
+	}
+	return items, nil
+}
+
+const markRemoved = `-- name: MarkRemoved :exec
+UPDATE agenda_items
+SET status = 'removed', updated_at = ?
+WHERE id = ?
+`
+
+type MarkRemovedParams struct {
+	UpdatedAt int64
+	ID        int64
+}
+
+func (q *Queries) MarkRemoved(ctx context.Context, arg MarkRemovedParams) error {
+	_, err := q.db.ExecContext(ctx, markRemoved, arg.UpdatedAt, arg.ID)
+	return err
+}
+
+const updateAgendaItem = `-- name: UpdateAgendaItem :exec
+UPDATE agenda_items SET
+    kind         = ?,
+    course_id    = ?,
+    title        = ?,
+    starts_at    = ?,
+    ends_at      = ?,
+    all_day      = ?,
+    source_url   = ?,
+    content_hash = ?,
+    updated_at   = ?,
+    status       = CASE WHEN status = 'removed' THEN 'active' ELSE status END
+WHERE id = ?
+`
+
+type UpdateAgendaItemParams struct {
+	Kind        string
+	CourseID    sql.NullInt64
+	Title       string
+	StartsAt    int64
+	EndsAt      sql.NullInt64
+	AllDay      int64
+	SourceUrl   sql.NullString
+	ContentHash string
+	UpdatedAt   int64
+	ID          int64
+}
+
+func (q *Queries) UpdateAgendaItem(ctx context.Context, arg UpdateAgendaItemParams) error {
+	_, err := q.db.ExecContext(ctx, updateAgendaItem,
+		arg.Kind,
+		arg.CourseID,
+		arg.Title,
+		arg.StartsAt,
+		arg.EndsAt,
+		arg.AllDay,
+		arg.SourceUrl,
+		arg.ContentHash,
+		arg.UpdatedAt,
+		arg.ID,
+	)
+	return err
 }
