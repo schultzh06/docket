@@ -4,6 +4,7 @@ go 1.27.1
 
 require (
 	connectrpc.com/connect v1.21.0
+	github.com/emersion/go-ical v0.0.0-20250609112844-439c63cef608
 	github.com/pressly/goose/v3 v3.28.0
 	google.golang.org/protobuf v1.36.12
 	modernc.org/sqlite v1.59.0
@@ -11,7 +12,6 @@ require (
 
 require (
 	github.com/dustin/go-humanize v1.0.1 // indirect
-	github.com/emersion/go-ical v0.0.0-20250609112844-439c63cef608 // indirect
 	github.com/google/uuid v1.6.0 // indirect
 	github.com/mattn/go-isatty v0.0.24 // indirect
 	github.com/mfridman/interpolate v0.0.2 // indirect
