@@ -9,6 +9,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"log/slog"
 	"time"
 
 	"github.com/schultzh06/docket/server/internal/ics"
@@ -46,30 +47,35 @@ func (s *Syncer) Sync(ctx context.Context) (Stats, error) {
 	if err != nil && !errors.Is(err, sql.ErrNoRows) {
 		return Stats{}, fmt.Errorf("load sync state: %w", err)
 	}
-	prev := ics.Validators{ETag: state.Etag.String, LastModified: state.LastModified.String}
+	cur, err := ics.DecodeCursor(state.Cursor.String)
+	if err != nil {
+		slog.Warn("discarding unreadable sync cursor", "source", source, "err", err)
+		cur = ics.Cursor{}
+	}
+	prev := ics.Validators{ETag: cur.ETag, LastModified: cur.LastModified}
 
 	res, err := s.Fetcher.Fetch(ctx, s.FeedURL, prev)
 	if err != nil {
-		return Stats{}, s.fail(ctx, q, err)
+		return Stats{}, s.fail(ctx, q, err, now)
 	}
 	if res.NotModified {
-		return Stats{NotModified: true}, s.succeed(ctx, q, res.Validators, state.BodyHash.String, now)
+		return Stats{NotModified: true}, s.succeed(ctx, q, res.Validators, cur.BodyHash, now)
 	}
 
 	sum := sha256.Sum256(res.Body)
 	bodyHash := hex.EncodeToString(sum[:])
-	if bodyHash == state.BodyHash.String {
+	if bodyHash == cur.BodyHash {
 		return Stats{NotModified: true}, s.succeed(ctx, q, res.Validators, bodyHash, now)
 	}
 
 	parsed, err := ics.Parse(bytes.NewReader(res.Body), s.Loc)
 	if err != nil {
-		return Stats{}, s.fail(ctx, q, err)
+		return Stats{}, s.fail(ctx, q, err, now)
 	}
 
 	st, err := s.apply(ctx, parsed.Events, now)
 	if err != nil {
-		return Stats{}, s.fail(ctx, q, err)
+		return Stats{}, s.fail(ctx, q, err, now)
 	}
 	st.Skipped = len(parsed.Skipped)
 	return st, s.succeed(ctx, q, res.Validators, bodyHash, now)
@@ -228,11 +234,14 @@ func resolveCourse(ctx context.Context, q *db.Queries, cache map[string]int64, c
 }
 
 func (s *Syncer) succeed(ctx context.Context, q *db.Queries, v ics.Validators, bodyHash string, now int64) error {
+	enc, err := ics.Cursor{ETag: v.ETag, LastModified: v.LastModified, BodyHash: bodyHash}.Encode()
+	if err != nil {
+		return fmt.Errorf("encode cursor: %w", err)
+	}
 	if err := q.SaveSyncSuccess(ctx, db.SaveSyncSuccessParams{
 		Source:        source,
-		Etag:          nullString(v.ETag),
-		LastModified:  nullString(v.LastModified),
-		BodyHash:      nullString(bodyHash),
+		Cursor:        sql.NullString{String: enc, Valid: true},
+		LastAttemptAt: sql.NullInt64{Int64: now, Valid: true},
 		LastSuccessAt: sql.NullInt64{Int64: now, Valid: true},
 	}); err != nil {
 		return fmt.Errorf("save sync state: %w", err)
@@ -241,10 +250,11 @@ func (s *Syncer) succeed(ctx context.Context, q *db.Queries, v ics.Validators, b
 }
 
 // fail records the error for the status panel and returns it unchanged.
-func (s *Syncer) fail(ctx context.Context, q *db.Queries, cause error) error {
+func (s *Syncer) fail(ctx context.Context, q *db.Queries, cause error, now int64) error {
 	return errors.Join(cause, q.SaveSyncError(ctx, db.SaveSyncErrorParams{
-		Source:    source,
-		LastError: nullString(cause.Error()),
+		Source:        source,
+		LastAttemptAt: sql.NullInt64{Int64: now, Valid: true},
+		LastError:     nullString(cause.Error()),
 	}))
 }
 

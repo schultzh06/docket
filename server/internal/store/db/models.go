@@ -33,10 +33,10 @@ type Course struct {
 }
 
 type SyncState struct {
-	Source        string
-	Etag          sql.NullString
-	LastModified  sql.NullString
-	BodyHash      sql.NullString
-	LastSuccessAt sql.NullInt64
-	LastError     sql.NullString
+	Source              string
+	Cursor              sql.NullString
+	LastAttemptAt       sql.NullInt64
+	LastSuccessAt       sql.NullInt64
+	LastError           sql.NullString
+	ConsecutiveFailures int64
 }
