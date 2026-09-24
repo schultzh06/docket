@@ -32,6 +32,28 @@ type Course struct {
 	CreatedAt int64
 }
 
+type Message struct {
+	ID                int64
+	JmapID            string
+	BlobID            string
+	ThreadID          string
+	MessageID         sql.NullString
+	DeliveredTo       sql.NullString
+	Source            string
+	FromAddr          string
+	FromName          sql.NullString
+	Subject           string
+	ReceivedAt        int64
+	BodyText          string
+	BodyPart          string
+	BodyTruncated     int64
+	NormalizerVersion int64
+	ContentHash       string
+	Status            string
+	FirstSeenAt       int64
+	UpdatedAt         int64
+}
+
 type SyncState struct {
 	Source              string
 	Cursor              sql.NullString
