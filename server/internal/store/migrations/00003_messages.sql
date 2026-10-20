@@ -16,7 +16,7 @@ CREATE TABLE messages (
     body_truncated     INTEGER NOT NULL DEFAULT 0 CHECK (body_truncated IN (0, 1)),
     normalizer_version INTEGER NOT NULL,
     content_hash       TEXT    NOT NULL,
-    status             TEXT    NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'removed')),
+    status             TEXT    NOT NULL DEFAULT 'active' CHECK (status IN ('active', 'removed', 'destroyed')),
     first_seen_at      INTEGER NOT NULL,
     updated_at         INTEGER NOT NULL
 ) STRICT;
