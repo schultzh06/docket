@@ -48,8 +48,8 @@ type Response struct {
 	SessionState    string       `json:"sessionState"`
 }
 
-// Result returns the arguments of the response to callID, which must be named
-// name. A server "error" response is returned as a *MethodError.
+// Result returns the arguments of the response to callID, which must be named name.
+// A server "error" response is returned as a *MethodError.
 func Result(resps []Invocation, callID, name string) (json.RawMessage, error) {
 	for _, r := range resps {
 		if r.CallID != callID {
